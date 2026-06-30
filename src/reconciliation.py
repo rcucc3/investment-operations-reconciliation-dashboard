@@ -85,6 +85,60 @@ def recommend_action(break_type):
 
     return action_map.get(break_type, "Review exception details and escalate if unresolved.")
 
+def assign_exception_owner(source, portfolio):
+    """Assign a sample operations owner based on workflow and portfolio."""
+    if source == "Trade Reconciliation":
+        return "Trade Operations Team"
+    elif source == "Position Reconciliation":
+        return "Portfolio Accounting Team"
+    elif source == "Cash Reconciliation":
+        return "Cash Operations Team"
+    else:
+        return "Operations Control Team"
+
+
+def assign_priority(risk_level, estimated_dollar_impact):
+    """Assign priority based on risk level and estimated dollar impact."""
+    if risk_level == "High" and estimated_dollar_impact >= 50000:
+        return "Critical"
+    elif risk_level == "High":
+        return "High"
+    elif risk_level == "Medium":
+        return "Medium"
+    else:
+        return "Low"
+
+
+def assign_root_cause_category(break_type):
+    """Classify exceptions into operational root cause categories."""
+    if break_type in ["missing_from_custodian", "missing_from_internal"]:
+        return "Booking Issue"
+    elif break_type in ["quantity_mismatch", "side_mismatch"]:
+        return "Allocation Issue"
+    elif break_type in ["price_mismatch", "market_price_mismatch", "market_value_mismatch"]:
+        return "Pricing Issue"
+    elif break_type in ["settlement_date_mismatch"]:
+        return "Settlement Issue"
+    elif break_type in ["cash_balance_mismatch"]:
+        return "Cash Movement Issue"
+    elif break_type in ["currency_mismatch"]:
+        return "Currency / FX Issue"
+    elif break_type in ["custodian_account_mismatch", "portfolio_mismatch"]:
+        return "Account Mapping Issue"
+    else:
+        return "Data Quality Issue"
+
+
+def estimate_days_open(risk_level, estimated_dollar_impact):
+    """Create realistic sample aging based on risk and dollar impact."""
+    if risk_level == "High" and estimated_dollar_impact >= 50000:
+        return 4
+    elif risk_level == "High":
+        return 2
+    elif risk_level == "Medium":
+        return 3
+    else:
+        return 1
 
 def create_exception_record(
     source,
@@ -97,7 +151,10 @@ def create_exception_record(
     custodian_value,
     estimated_dollar_impact,
 ):
-    """Create a standardized exception record."""
+    """Create a standardized exception record with management fields."""
+    risk_level = classify_risk(break_type)
+    priority = assign_priority(risk_level, estimated_dollar_impact)
+
     return {
         "source": source,
         "record_id": record_id,
@@ -108,7 +165,11 @@ def create_exception_record(
         "internal_value": internal_value,
         "custodian_value": custodian_value,
         "estimated_dollar_impact": estimated_dollar_impact,
-        "risk_level": classify_risk(break_type),
+        "risk_level": risk_level,
+        "priority": priority,
+        "exception_owner": assign_exception_owner(source, portfolio),
+        "days_open": estimate_days_open(risk_level, estimated_dollar_impact),
+        "root_cause_category": assign_root_cause_category(break_type),
         "recommended_action": recommend_action(break_type),
         "status": "Open",
     }
@@ -442,6 +503,8 @@ def export_excel_report(all_exceptions, trade_exceptions, position_exceptions, c
             "Medium Risk Exceptions",
             "Low Risk Exceptions",
             "Total Estimated Dollar Impact",
+            "Critical Priority Exceptions",
+            "Average Days Open",
         ],
         "Value": [
             len(all_exceptions),
@@ -452,7 +515,9 @@ def export_excel_report(all_exceptions, trade_exceptions, position_exceptions, c
             len(all_exceptions[all_exceptions["risk_level"] == "Medium"]),
             len(all_exceptions[all_exceptions["risk_level"] == "Low"]),
             all_exceptions["estimated_dollar_impact"].sum(),
-        ],
+            len(all_exceptions[all_exceptions["priority"] == "Critical"]),
+            round(all_exceptions["days_open"].mean(), 1),
+    ],
     }
 
     summary_df = pd.DataFrame(summary_data)
@@ -481,7 +546,15 @@ def export_excel_report(all_exceptions, trade_exceptions, position_exceptions, c
         .reset_index()
         .sort_values("estimated_dollar_impact", ascending=False)
     )
-
+    root_cause_breakdown = (
+        all_exceptions.groupby("root_cause_category")
+        .agg(
+            exception_count=("record_id", "count"),
+            estimated_dollar_impact=("estimated_dollar_impact", "sum"),
+        )
+        .reset_index()
+        .sort_values("estimated_dollar_impact", ascending=False)
+    )
     with pd.ExcelWriter(excel_output_file, engine="openpyxl") as writer:
         summary_df.to_excel(writer, sheet_name="Summary", index=False)
         all_exceptions.to_excel(writer, sheet_name="All Exceptions", index=False)
@@ -491,6 +564,7 @@ def export_excel_report(all_exceptions, trade_exceptions, position_exceptions, c
         high_risk_exceptions.to_excel(writer, sheet_name="High Risk Exceptions", index=False)
         portfolio_breakdown.to_excel(writer, sheet_name="Portfolio Breakdown", index=False)
         source_breakdown.to_excel(writer, sheet_name="Source Breakdown", index=False)
+        root_cause_breakdown.to_excel(writer, sheet_name="Root Cause Breakdown", index=False)
 
     return excel_output_file   
 
