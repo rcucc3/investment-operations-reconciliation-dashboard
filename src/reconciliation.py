@@ -22,6 +22,12 @@ def load_holdings_data():
 
     return internal_holdings, custodian_holdings
 
+def load_cash_data():
+    """Load internal and custodian cash balance files."""
+    internal_cash = pd.read_csv(DATA_DIR / "cash_internal.csv")
+    custodian_cash = pd.read_csv(DATA_DIR / "cash_custodian.csv")
+
+    return internal_cash, custodian_cash
 
 def calculate_dollar_value(quantity, price):
     """Calculate estimated dollar value using quantity and price."""
@@ -36,6 +42,7 @@ def classify_risk(break_type):
         "quantity_mismatch",
         "price_mismatch",
         "market_value_mismatch",
+        "cash_balance_mismatch",
     ]
 
     medium_risk_breaks = [
@@ -44,6 +51,7 @@ def classify_risk(break_type):
         "side_mismatch",
         "ticker_mismatch",
         "currency_mismatch",
+        "as_of_date_mismatch",
     ]
 
     if break_type in high_risk_breaks:
@@ -70,6 +78,8 @@ def recommend_action(break_type):
         "portfolio_mismatch": "Confirm account mapping between internal and custodian systems.",
         "asset_class_mismatch": "Review security master classification.",
         "trader_mismatch": "Review internal trade ownership assignment.",
+        "cash_balance_mismatch": "Investigate unsettled trades, custodian cash movements, fees, and income activity causing the cash difference.",
+        "as_of_date_mismatch": "Confirm both cash balances are using the same valuation date.",
         "custodian_account_mismatch": "Confirm custodian account mapping and portfolio setup.",
     }
 
@@ -305,32 +315,148 @@ def reconcile_holdings(internal_holdings, custodian_holdings):
 
     return pd.DataFrame(exceptions)
 
+def reconcile_cash(internal_cash, custodian_cash):
+    """
+    Compare internal expected cash balances against custodian cash balances
+    and return cash exceptions.
+    """
+    merged = internal_cash.merge(
+        custodian_cash,
+        on=["portfolio", "currency"],
+        how="outer",
+        suffixes=("_internal", "_custodian"),
+        indicator=True,
+    )
+
+    exceptions = []
+
+    for _, row in merged.iterrows():
+        portfolio = row["portfolio"]
+        currency = row["currency"]
+        record_id = f"{portfolio}-{currency}"
+
+        if row["_merge"] == "left_only":
+            break_type = "missing_from_custodian"
+
+            exceptions.append(
+                create_exception_record(
+                    source="Cash Reconciliation",
+                    record_id=record_id,
+                    portfolio=portfolio,
+                    ticker="Cash",
+                    asset_class="Cash",
+                    break_type=break_type,
+                    internal_value="Present",
+                    custodian_value="Missing",
+                    estimated_dollar_impact=row["internal_cash_balance"],
+                )
+            )
+
+        elif row["_merge"] == "right_only":
+            break_type = "missing_from_internal"
+
+            exceptions.append(
+                create_exception_record(
+                    source="Cash Reconciliation",
+                    record_id=record_id,
+                    portfolio=portfolio,
+                    ticker="Cash",
+                    asset_class="Cash",
+                    break_type=break_type,
+                    internal_value="Missing",
+                    custodian_value="Present",
+                    estimated_dollar_impact=row["custodian_cash_balance"],
+                )
+            )
+
+        else:
+            internal_balance = row["internal_cash_balance"]
+            custodian_balance = row["custodian_cash_balance"]
+            cash_difference = internal_balance - custodian_balance
+
+            if cash_difference != 0:
+                break_type = "cash_balance_mismatch"
+
+                exceptions.append(
+                    create_exception_record(
+                        source="Cash Reconciliation",
+                        record_id=record_id,
+                        portfolio=portfolio,
+                        ticker="Cash",
+                        asset_class="Cash",
+                        break_type=break_type,
+                        internal_value=internal_balance,
+                        custodian_value=custodian_balance,
+                        estimated_dollar_impact=abs(cash_difference),
+                    )
+                )
+
+            if row["as_of_date_internal"] != row["as_of_date_custodian"]:
+                break_type = "as_of_date_mismatch"
+
+                exceptions.append(
+                    create_exception_record(
+                        source="Cash Reconciliation",
+                        record_id=record_id,
+                        portfolio=portfolio,
+                        ticker="Cash",
+                        asset_class="Cash",
+                        break_type=break_type,
+                        internal_value=row["as_of_date_internal"],
+                        custodian_value=row["as_of_date_custodian"],
+                        estimated_dollar_impact=abs(cash_difference),
+                    )
+                )
+
+            if row["custodian_account_internal"] != row["custodian_account_custodian"]:
+                break_type = "custodian_account_mismatch"
+
+                exceptions.append(
+                    create_exception_record(
+                        source="Cash Reconciliation",
+                        record_id=record_id,
+                        portfolio=portfolio,
+                        ticker="Cash",
+                        asset_class="Cash",
+                        break_type=break_type,
+                        internal_value=row["custodian_account_internal"],
+                        custodian_value=row["custodian_account_custodian"],
+                        estimated_dollar_impact=abs(cash_difference),
+                    )
+                )
+
+    return pd.DataFrame(exceptions)
 
 def main():
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     internal_trades, custodian_trades = load_trade_data()
     internal_holdings, custodian_holdings = load_holdings_data()
+    internal_cash, custodian_cash = load_cash_data()
 
     trade_exceptions = reconcile_trades(internal_trades, custodian_trades)
     position_exceptions = reconcile_holdings(internal_holdings, custodian_holdings)
+    cash_exceptions = reconcile_cash(internal_cash, custodian_cash)
 
     all_exceptions = pd.concat(
-        [trade_exceptions, position_exceptions],
+        [trade_exceptions, position_exceptions, cash_exceptions],
         ignore_index=True,
     )
 
     trade_output_file = OUTPUT_DIR / "trade_exceptions.csv"
     position_output_file = OUTPUT_DIR / "position_exceptions.csv"
+    cash_output_file = OUTPUT_DIR / "cash_exceptions.csv"
     all_output_file = OUTPUT_DIR / "all_exceptions.csv"
 
     trade_exceptions.to_csv(trade_output_file, index=False)
     position_exceptions.to_csv(position_output_file, index=False)
+    cash_exceptions.to_csv(cash_output_file, index=False)
     all_exceptions.to_csv(all_output_file, index=False)
 
     print("Reconciliation complete.")
     print(f"Trade exceptions found: {len(trade_exceptions)}")
     print(f"Position exceptions found: {len(position_exceptions)}")
+    print(f"Cash exceptions found: {len(cash_exceptions)}")
     print(f"Total exceptions found: {len(all_exceptions)}")
     print(f"Output saved to: {all_output_file}")
     print()

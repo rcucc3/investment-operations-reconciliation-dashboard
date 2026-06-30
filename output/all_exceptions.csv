@@ -12,3 +12,5 @@ Position Reconciliation,Growth Fund-GOOGL,Growth Fund,GOOGL,Equity,missing_from_
 Position Reconciliation,Growth Fund-MSFT,Growth Fund,MSFT,Equity,quantity_mismatch,300.0,295.0,126030.0,High,Compare internal allocation records against custodian position or trade details.,Open
 Position Reconciliation,Income Fund-AGG,Income Fund,AGG,Bond ETF,missing_from_custodian,Present,Missing,87840.0,High,Confirm record with custodian and investigate whether the position or trade failed to book externally.,Open
 Position Reconciliation,Income Fund-IEF,Income Fund,IEF,Bond ETF,quantity_mismatch,600.0,610.0,56880.0,High,Compare internal allocation records against custodian position or trade details.,Open
+Cash Reconciliation,Growth Fund-USD,Growth Fund,Cash,Cash,cash_balance_mismatch,125000.0,119435.0,5565.0,High,"Investigate unsettled trades, custodian cash movements, fees, and income activity causing the cash difference.",Open
+Cash Reconciliation,Income Fund-USD,Income Fund,Cash,Cash,cash_balance_mismatch,152500.0,123220.0,29280.0,High,"Investigate unsettled trades, custodian cash movements, fees, and income activity causing the cash difference.",Open
