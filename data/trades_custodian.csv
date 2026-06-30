@@ -1,0 +1,9 @@
+trade_id,trade_date,settlement_date,portfolio,ticker,asset_class,side,quantity,price,currency,trader
+T001,2026-06-01,2026-06-03,Growth Fund,AAPL,Equity,BUY,100,195.25,USD,J. Miller
+T002,2026-06-01,2026-06-03,Growth Fund,MSFT,Equity,BUY,70,420.10,USD,J. Miller
+T003,2026-06-02,2026-06-04,Balanced Fund,SPY,ETF,SELL,50,530.40,USD,A. Patel
+T004,2026-06-02,2026-06-05,Income Fund,TLT,Bond ETF,BUY,200,91.30,USD,S. Lee
+T006,2026-06-03,2026-06-05,Balanced Fund,JPM,Equity,BUY,60,204.90,USD,A. Patel
+T007,2026-06-04,2026-06-06,Income Fund,IEF,Bond ETF,SELL,150,94.80,USD,S. Lee
+T009,2026-06-05,2026-06-09,Balanced Fund,XLF,ETF,BUY,120,43.75,USD,A. Patel
+T011,2026-06-05,2026-06-09,Growth Fund,AMZN,Equity,BUY,30,185.50,USD,J. Miller
