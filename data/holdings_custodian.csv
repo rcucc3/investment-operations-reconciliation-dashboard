@@ -1,0 +1,10 @@
+portfolio,ticker,asset_class,quantity,market_price,currency,custodian_account
+Growth Fund,AAPL,Equity,500,195.25,USD,GF-1001
+Growth Fund,MSFT,Equity,295,420.10,USD,GF-1001
+Growth Fund,NVDA,Equity,180,122.75,USD,GF-1001
+Balanced Fund,SPY,ETF,400,530.40,USD,BF-2001
+Balanced Fund,JPM,Equity,250,204.90,USD,BF-2001
+Balanced Fund,XLF,ETF,600,43.75,USD,BF-2001
+Income Fund,TLT,Bond ETF,700,91.30,USD,IF-3001
+Income Fund,IEF,Bond ETF,610,94.80,USD,IF-3001
+Growth Fund,AMZN,Equity,30,185.50,USD,GF-1001
