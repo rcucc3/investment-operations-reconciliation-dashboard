@@ -426,6 +426,73 @@ def reconcile_cash(internal_cash, custodian_cash):
                 )
 
     return pd.DataFrame(exceptions)
+def export_excel_report(all_exceptions, trade_exceptions, position_exceptions, cash_exceptions):
+    """
+    Export a multi-tab Excel exception report for operations review.
+    """
+    excel_output_file = OUTPUT_DIR / "Investment_Operations_Exception_Report.xlsx"
+
+    summary_data = {
+        "Metric": [
+            "Total Exceptions",
+            "Trade Exceptions",
+            "Position Exceptions",
+            "Cash Exceptions",
+            "High Risk Exceptions",
+            "Medium Risk Exceptions",
+            "Low Risk Exceptions",
+            "Total Estimated Dollar Impact",
+        ],
+        "Value": [
+            len(all_exceptions),
+            len(trade_exceptions),
+            len(position_exceptions),
+            len(cash_exceptions),
+            len(all_exceptions[all_exceptions["risk_level"] == "High"]),
+            len(all_exceptions[all_exceptions["risk_level"] == "Medium"]),
+            len(all_exceptions[all_exceptions["risk_level"] == "Low"]),
+            all_exceptions["estimated_dollar_impact"].sum(),
+        ],
+    }
+
+    summary_df = pd.DataFrame(summary_data)
+
+    high_risk_exceptions = all_exceptions[
+        all_exceptions["risk_level"] == "High"
+    ].sort_values("estimated_dollar_impact", ascending=False)
+
+    portfolio_breakdown = (
+        all_exceptions.groupby("portfolio")
+        .agg(
+            exception_count=("record_id", "count"),
+            high_risk_count=("risk_level", lambda x: (x == "High").sum()),
+            estimated_dollar_impact=("estimated_dollar_impact", "sum"),
+        )
+        .reset_index()
+        .sort_values("estimated_dollar_impact", ascending=False)
+    )
+
+    source_breakdown = (
+        all_exceptions.groupby("source")
+        .agg(
+            exception_count=("record_id", "count"),
+            estimated_dollar_impact=("estimated_dollar_impact", "sum"),
+        )
+        .reset_index()
+        .sort_values("estimated_dollar_impact", ascending=False)
+    )
+
+    with pd.ExcelWriter(excel_output_file, engine="openpyxl") as writer:
+        summary_df.to_excel(writer, sheet_name="Summary", index=False)
+        all_exceptions.to_excel(writer, sheet_name="All Exceptions", index=False)
+        trade_exceptions.to_excel(writer, sheet_name="Trade Exceptions", index=False)
+        position_exceptions.to_excel(writer, sheet_name="Position Exceptions", index=False)
+        cash_exceptions.to_excel(writer, sheet_name="Cash Exceptions", index=False)
+        high_risk_exceptions.to_excel(writer, sheet_name="High Risk Exceptions", index=False)
+        portfolio_breakdown.to_excel(writer, sheet_name="Portfolio Breakdown", index=False)
+        source_breakdown.to_excel(writer, sheet_name="Source Breakdown", index=False)
+
+    return excel_output_file   
 
 def main():
     OUTPUT_DIR.mkdir(exist_ok=True)
@@ -452,6 +519,12 @@ def main():
     position_exceptions.to_csv(position_output_file, index=False)
     cash_exceptions.to_csv(cash_output_file, index=False)
     all_exceptions.to_csv(all_output_file, index=False)
+    excel_output_file = export_excel_report(
+        all_exceptions,
+        trade_exceptions,
+        position_exceptions,
+        cash_exceptions,
+    )
 
     print("Reconciliation complete.")
     print(f"Trade exceptions found: {len(trade_exceptions)}")
@@ -459,6 +532,7 @@ def main():
     print(f"Cash exceptions found: {len(cash_exceptions)}")
     print(f"Total exceptions found: {len(all_exceptions)}")
     print(f"Output saved to: {all_output_file}")
+    print(f"Excel report saved to: {excel_output_file}")
     print()
     print(all_exceptions)
 
