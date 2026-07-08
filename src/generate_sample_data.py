@@ -403,7 +403,114 @@ def build_custodian_holdings(internal_holdings):
 
     return custodian_holdings, exception_log
 
+def build_internal_cash():
+    """
+    Create internal cash balances for the same five portfolios
+    used in the generated trade and holdings datasets.
+    """
+    rows = []
 
+    base_balances = [
+        250000.00,
+        325000.00,
+        410000.00,
+        185000.00,
+        290000.00,
+    ]
+
+    for portfolio_data, cash_balance in zip(PORTFOLIOS, base_balances):
+        rows.append(
+            {
+                "portfolio": portfolio_data["portfolio"],
+                "currency": "USD",
+                "internal_cash_balance": cash_balance,
+                "as_of_date": "2026-06-15",
+                "custodian_account": portfolio_data["account"],
+            }
+        )
+
+    return pd.DataFrame(rows)
+
+
+def build_custodian_cash(internal_cash):
+    """
+    Create custodian cash balances and inject controlled cash
+    reconciliation exceptions.
+    """
+    custodian_cash = internal_cash.rename(
+        columns={
+            "internal_cash_balance": "custodian_cash_balance"
+        }
+    ).copy()
+
+    injected_exceptions = []
+
+    # Cash-balance mismatch for US Growth Fund
+    row_index = 0
+    portfolio = custodian_cash.loc[row_index, "portfolio"]
+    internal_value = internal_cash.loc[
+        row_index,
+        "internal_cash_balance",
+    ]
+    custodian_value = internal_value - 18550.00
+
+    custodian_cash.loc[
+        row_index,
+        "custodian_cash_balance",
+    ] = custodian_value
+
+    injected_exceptions.append(
+        {
+            "record_id": f"{portfolio}-USD",
+            "exception_type": "cash_balance_mismatch",
+            "internal_value": internal_value,
+            "custodian_value": custodian_value,
+        }
+    )
+
+    # Cash-balance mismatch for Core Income Fund
+    row_index = 2
+    portfolio = custodian_cash.loc[row_index, "portfolio"]
+    internal_value = internal_cash.loc[
+        row_index,
+        "internal_cash_balance",
+    ]
+    custodian_value = internal_value + 29400.00
+
+    custodian_cash.loc[
+        row_index,
+        "custodian_cash_balance",
+    ] = custodian_value
+
+    injected_exceptions.append(
+        {
+            "record_id": f"{portfolio}-USD",
+            "exception_type": "cash_balance_mismatch",
+            "internal_value": internal_value,
+            "custodian_value": custodian_value,
+        }
+    )
+
+    # As-of-date mismatch for International Equity Fund
+    row_index = 3
+    portfolio = custodian_cash.loc[row_index, "portfolio"]
+    internal_value = internal_cash.loc[row_index, "as_of_date"]
+    custodian_value = "2026-06-14"
+
+    custodian_cash.loc[row_index, "as_of_date"] = custodian_value
+
+    injected_exceptions.append(
+        {
+            "record_id": f"{portfolio}-USD",
+            "exception_type": "as_of_date_mismatch",
+            "internal_value": internal_value,
+            "custodian_value": custodian_value,
+        }
+    )
+
+    exception_log = pd.DataFrame(injected_exceptions)
+
+    return custodian_cash, exception_log
 def main():
     GENERATED_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -418,7 +525,11 @@ def main():
     custodian_holdings, holdings_exception_log = (
         build_custodian_holdings(internal_holdings)
     )
+    internal_cash = build_internal_cash()
 
+    custodian_cash, cash_exception_log = build_custodian_cash(
+        internal_cash
+)
     internal_output_file = (
         GENERATED_DATA_DIR / "trades_internal_generated.csv"
     )
@@ -442,7 +553,17 @@ def main():
     holdings_exception_log_output_file = (
         GENERATED_DATA_DIR / "injected_holdings_exceptions.csv"
     )
+    internal_cash_output_file = (
+        GENERATED_DATA_DIR / "cash_internal_generated.csv"
+)
 
+    custodian_cash_output_file = (
+        GENERATED_DATA_DIR / "cash_custodian_generated.csv"
+)
+
+    cash_exception_log_output_file = (
+    GENERATED_DATA_DIR / "injected_cash_exceptions.csv"
+)
     internal_trades.to_csv(
         internal_output_file,
         index=False,
@@ -472,7 +593,20 @@ def main():
         holdings_exception_log_output_file,
         index=False,
     )
+    internal_cash.to_csv(
+        internal_cash_output_file,
+        index=False,
+)
 
+    custodian_cash.to_csv(
+        custodian_cash_output_file,
+        index=False,
+)
+
+    cash_exception_log.to_csv(
+        cash_exception_log_output_file,
+        index=False,
+)
     print("Generated sample data successfully.")
     print(f"Internal trades created: {len(internal_trades)}")
     print(f"Custodian trades created: {len(custodian_trades)}")
@@ -487,7 +621,12 @@ def main():
         f"Controlled holdings exceptions injected: "
         f"{len(holdings_exception_log)}"
     )
-
+    print(f"Internal cash records created: {len(internal_cash)}")
+    print(f"Custodian cash records created: {len(custodian_cash)}")
+    print(
+        f"Controlled cash exceptions injected: "
+        f"{len(cash_exception_log)}"
+)
     print()
     print(f"Internal trades file: {internal_output_file}")
     print(f"Custodian trades file: {custodian_output_file}")
@@ -495,6 +634,9 @@ def main():
     print(f"Internal holdings file: {internal_holdings_output_file}")
     print(f"Custodian holdings file: {custodian_holdings_output_file}")
     print(f"Holdings exception log: {holdings_exception_log_output_file}")
+    print(f"Internal cash file: {internal_cash_output_file}")
+    print(f"Custodian cash file: {custodian_cash_output_file}")
+    print(f"Cash exception log: {cash_exception_log_output_file}")
 
 
 if __name__ == "__main__":

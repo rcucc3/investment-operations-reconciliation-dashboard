@@ -1,0 +1,4 @@
+record_id,exception_type,internal_value,custodian_value
+US Growth Fund-USD,cash_balance_mismatch,250000.0,231450.0
+Core Income Fund-USD,cash_balance_mismatch,410000.0,439400.0
+International Equity Fund-USD,as_of_date_mismatch,2026-06-15,2026-06-14

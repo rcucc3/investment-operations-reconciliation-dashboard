@@ -48,9 +48,23 @@ def load_holdings_data():
     return internal_holdings, custodian_holdings
 
 def load_cash_data():
-    """Load internal and custodian cash balance files."""
-    internal_cash = pd.read_csv(DATA_DIR / "cash_internal.csv")
-    custodian_cash = pd.read_csv(DATA_DIR / "cash_custodian.csv")
+    """
+    Load either the original demonstration cash files or the
+    expanded generated cash files.
+    """
+    if USE_GENERATED_DATA:
+        internal_file = (
+            GENERATED_DATA_DIR / "cash_internal_generated.csv"
+        )
+        custodian_file = (
+            GENERATED_DATA_DIR / "cash_custodian_generated.csv"
+        )
+    else:
+        internal_file = DATA_DIR / "cash_internal.csv"
+        custodian_file = DATA_DIR / "cash_custodian.csv"
+
+    internal_cash = pd.read_csv(internal_file)
+    custodian_cash = pd.read_csv(custodian_file)
 
     return internal_cash, custodian_cash
 
