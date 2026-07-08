@@ -253,14 +253,170 @@ def build_custodian_trades(internal_trades):
     exception_log = pd.DataFrame(injected_exceptions)
 
     return custodian_trades, exception_log
+def build_internal_holdings():
+    """
+    Create deterministic portfolio holdings using the same portfolios
+    and securities as the generated trade dataset.
+    """
+    rows = []
+
+    holdings_per_portfolio = 5
+
+    for portfolio_index, portfolio_data in enumerate(PORTFOLIOS):
+        for holding_index in range(holdings_per_portfolio):
+            security_index = (
+                portfolio_index * holdings_per_portfolio + holding_index
+            ) % len(SECURITIES)
+
+            security = SECURITIES[security_index]
+
+            quantity = 100 + (holding_index * 75) + (portfolio_index * 25)
+
+            rows.append(
+                {
+                    "portfolio": portfolio_data["portfolio"],
+                    "ticker": security["ticker"],
+                    "asset_class": security["asset_class"],
+                    "quantity": quantity,
+                    "market_price": security["price"],
+                    "currency": security["currency"],
+                    "custodian_account": portfolio_data["account"],
+                }
+            )
+
+    return pd.DataFrame(rows)
+
+
+def build_custodian_holdings(internal_holdings):
+    """
+    Create custodian holdings and inject controlled position
+    reconciliation exceptions.
+    """
+    custodian_holdings = internal_holdings.copy()
+    injected_exceptions = []
+
+    # Quantity mismatch
+    row_index = 2
+    portfolio = custodian_holdings.loc[row_index, "portfolio"]
+    ticker = custodian_holdings.loc[row_index, "ticker"]
+    original_value = custodian_holdings.loc[row_index, "quantity"]
+    new_value = original_value - 25
+
+    custodian_holdings.loc[row_index, "quantity"] = new_value
+
+    injected_exceptions.append(
+        {
+            "record_id": f"{portfolio}-{ticker}",
+            "exception_type": "quantity_mismatch",
+            "internal_value": original_value,
+            "custodian_value": new_value,
+        }
+    )
+
+    # Market-price mismatch
+    row_index = 6
+    portfolio = custodian_holdings.loc[row_index, "portfolio"]
+    ticker = custodian_holdings.loc[row_index, "ticker"]
+    original_value = custodian_holdings.loc[row_index, "market_price"]
+    new_value = round(original_value + 0.50, 2)
+
+    custodian_holdings.loc[row_index, "market_price"] = new_value
+
+    injected_exceptions.append(
+        {
+            "record_id": f"{portfolio}-{ticker}",
+            "exception_type": "market_price_mismatch",
+            "internal_value": original_value,
+            "custodian_value": new_value,
+        }
+    )
+
+    # Currency mismatch
+    row_index = 11
+    portfolio = custodian_holdings.loc[row_index, "portfolio"]
+    ticker = custodian_holdings.loc[row_index, "ticker"]
+    original_value = custodian_holdings.loc[row_index, "currency"]
+    new_value = "EUR" if original_value == "USD" else "USD"
+
+    custodian_holdings.loc[row_index, "currency"] = new_value
+
+    injected_exceptions.append(
+        {
+            "record_id": f"{portfolio}-{ticker}",
+            "exception_type": "currency_mismatch",
+            "internal_value": original_value,
+            "custodian_value": new_value,
+        }
+    )
+
+    # Positions missing from custodian
+    missing_row_indices = [15, 21]
+
+    missing_records = custodian_holdings.loc[
+        missing_row_indices,
+        ["portfolio", "ticker"],
+    ].copy()
+
+    for _, record in missing_records.iterrows():
+        injected_exceptions.append(
+            {
+                "record_id": f"{record['portfolio']}-{record['ticker']}",
+                "exception_type": "missing_from_custodian",
+                "internal_value": "Present",
+                "custodian_value": "Missing",
+            }
+        )
+
+    custodian_holdings = custodian_holdings.drop(
+        index=missing_row_indices
+    ).reset_index(drop=True)
+
+    # Position present only at custodian
+    extra_position = {
+        "portfolio": PORTFOLIOS[0]["portfolio"],
+        "ticker": "AMZN",
+        "asset_class": "Equity",
+        "quantity": 100,
+        "market_price": 185.50,
+        "currency": "USD",
+        "custodian_account": PORTFOLIOS[0]["account"],
+    }
+
+    custodian_holdings = pd.concat(
+        [
+            custodian_holdings,
+            pd.DataFrame([extra_position]),
+        ],
+        ignore_index=True,
+    )
+
+    injected_exceptions.append(
+        {
+            "record_id": f"{extra_position['portfolio']}-AMZN",
+            "exception_type": "missing_from_internal",
+            "internal_value": "Missing",
+            "custodian_value": "Present",
+        }
+    )
+
+    exception_log = pd.DataFrame(injected_exceptions)
+
+    return custodian_holdings, exception_log
+
 
 def main():
     GENERATED_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     internal_trades = build_internal_trades(number_of_trades=50)
 
-    custodian_trades, exception_log = build_custodian_trades(
+    custodian_trades, trade_exception_log = build_custodian_trades(
         internal_trades
+    )
+
+    internal_holdings = build_internal_holdings()
+
+    custodian_holdings, holdings_exception_log = (
+        build_custodian_holdings(internal_holdings)
     )
 
     internal_output_file = (
@@ -271,8 +427,20 @@ def main():
         GENERATED_DATA_DIR / "trades_custodian_generated.csv"
     )
 
-    exception_log_output_file = (
+    trade_exception_log_output_file = (
         GENERATED_DATA_DIR / "injected_trade_exceptions.csv"
+    )
+
+    internal_holdings_output_file = (
+        GENERATED_DATA_DIR / "holdings_internal_generated.csv"
+    )
+
+    custodian_holdings_output_file = (
+        GENERATED_DATA_DIR / "holdings_custodian_generated.csv"
+    )
+
+    holdings_exception_log_output_file = (
+        GENERATED_DATA_DIR / "injected_holdings_exceptions.csv"
     )
 
     internal_trades.to_csv(
@@ -285,21 +453,49 @@ def main():
         index=False,
     )
 
-    exception_log.to_csv(
-        exception_log_output_file,
+    trade_exception_log.to_csv(
+        trade_exception_log_output_file,
         index=False,
     )
 
-    print("Generated sample trade data successfully.")
+    internal_holdings.to_csv(
+        internal_holdings_output_file,
+        index=False,
+    )
+
+    custodian_holdings.to_csv(
+        custodian_holdings_output_file,
+        index=False,
+    )
+
+    holdings_exception_log.to_csv(
+        holdings_exception_log_output_file,
+        index=False,
+    )
+
+    print("Generated sample data successfully.")
     print(f"Internal trades created: {len(internal_trades)}")
     print(f"Custodian trades created: {len(custodian_trades)}")
-    print(f"Controlled exceptions injected: {len(exception_log)}")
+    print(
+        f"Controlled trade exceptions injected: "
+        f"{len(trade_exception_log)}"
+    )
+
+    print(f"Internal holdings created: {len(internal_holdings)}")
+    print(f"Custodian holdings created: {len(custodian_holdings)}")
+    print(
+        f"Controlled holdings exceptions injected: "
+        f"{len(holdings_exception_log)}"
+    )
+
     print()
-    print(f"Internal file: {internal_output_file}")
-    print(f"Custodian file: {custodian_output_file}")
-    print(f"Exception log: {exception_log_output_file}")
-    print()
-    print(exception_log)
+    print(f"Internal trades file: {internal_output_file}")
+    print(f"Custodian trades file: {custodian_output_file}")
+    print(f"Trade exception log: {trade_exception_log_output_file}")
+    print(f"Internal holdings file: {internal_holdings_output_file}")
+    print(f"Custodian holdings file: {custodian_holdings_output_file}")
+    print(f"Holdings exception log: {holdings_exception_log_output_file}")
+
 
 if __name__ == "__main__":
     main()

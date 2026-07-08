@@ -1,0 +1,7 @@
+record_id,exception_type,internal_value,custodian_value
+US Growth Fund-NVDA,quantity_mismatch,250,225
+Balanced Allocation Fund-XLF,market_price_mismatch,43.75,44.25
+Core Income Fund-ASML,currency_mismatch,EUR,USD
+International Equity Fund-MSFT,missing_from_custodian,Present,Missing
+Short Duration Bond Fund-TLT,missing_from_custodian,Present,Missing
+US Growth Fund-AMZN,missing_from_internal,Missing,Present

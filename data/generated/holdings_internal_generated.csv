@@ -1,0 +1,26 @@
+portfolio,ticker,asset_class,quantity,market_price,currency,custodian_account
+US Growth Fund,AAPL,Equity,100,195.25,USD,GF-1001
+US Growth Fund,MSFT,Equity,175,420.1,USD,GF-1001
+US Growth Fund,NVDA,Equity,250,122.75,USD,GF-1001
+US Growth Fund,GOOGL,Equity,325,178.2,USD,GF-1001
+US Growth Fund,JPM,Equity,400,205.15,USD,GF-1001
+Balanced Allocation Fund,SPY,ETF,125,530.4,USD,BF-2001
+Balanced Allocation Fund,XLF,ETF,200,43.75,USD,BF-2001
+Balanced Allocation Fund,TLT,Bond ETF,275,91.3,USD,BF-2001
+Balanced Allocation Fund,IEF,Bond ETF,350,94.8,USD,BF-2001
+Balanced Allocation Fund,AGG,Bond ETF,425,97.6,USD,BF-2001
+Core Income Fund,SAP,Equity,150,184.5,EUR,IF-3001
+Core Income Fund,ASML,Equity,225,935.2,EUR,IF-3001
+Core Income Fund,TM,ADR,300,178.4,USD,IF-3001
+Core Income Fund,EWJ,ETF,375,69.15,USD,IF-3001
+Core Income Fund,AAPL,Equity,450,195.25,USD,IF-3001
+International Equity Fund,MSFT,Equity,175,420.1,USD,IEF-4001
+International Equity Fund,NVDA,Equity,250,122.75,USD,IEF-4001
+International Equity Fund,GOOGL,Equity,325,178.2,USD,IEF-4001
+International Equity Fund,JPM,Equity,400,205.15,USD,IEF-4001
+International Equity Fund,SPY,ETF,475,530.4,USD,IEF-4001
+Short Duration Bond Fund,XLF,ETF,200,43.75,USD,SDB-5001
+Short Duration Bond Fund,TLT,Bond ETF,275,91.3,USD,SDB-5001
+Short Duration Bond Fund,IEF,Bond ETF,350,94.8,USD,SDB-5001
+Short Duration Bond Fund,AGG,Bond ETF,425,97.6,USD,SDB-5001
+Short Duration Bond Fund,SAP,Equity,500,184.5,EUR,SDB-5001
