@@ -48,22 +48,85 @@ if not ALL_EXCEPTIONS_FILE.exists():
     st.stop()
 
 exceptions = load_exception_data()
+priority_order = {
+    "Critical": 1,
+    "High": 2,
+    "Medium": 3,
+    "Low": 4,
+}
 
+risk_order = {
+    "High": 1,
+    "Medium": 2,
+    "Low": 3,
+}
+
+exceptions["priority_rank"] = (
+    exceptions["priority"]
+    .map(priority_order)
+    .fillna(99)
+)
+
+exceptions["risk_rank"] = (
+    exceptions["risk_level"]
+    .map(risk_order)
+    .fillna(99)
+)
 total_exceptions = len(exceptions)
-high_risk_exceptions = len(exceptions[exceptions["risk_level"] == "High"])
-critical_exceptions = len(exceptions[exceptions["priority"] == "Critical"])
-total_dollar_impact = exceptions["estimated_dollar_impact"].sum()
-average_days_open = exceptions["days_open"].mean()
+
+high_risk_exceptions = len(
+    exceptions[exceptions["risk_level"] == "High"]
+)
+
+critical_exceptions = len(
+    exceptions[exceptions["priority"] == "Critical"]
+)
+
+aged_exceptions = len(
+    exceptions[exceptions["days_open"] >= 3]
+)
+
+total_dollar_impact = (
+    exceptions["estimated_dollar_impact"].sum()
+)
+
+average_days_open = (
+    exceptions["days_open"].mean()
+)
 
 st.subheader("Breaks Overview")
 
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
-col1.metric("Total Exceptions", total_exceptions)
-col2.metric("High Risk", high_risk_exceptions)
-col3.metric("Critical Priority", critical_exceptions)
-col4.metric("Est. Break Exposure", format_currency(total_dollar_impact))
-col5.metric("Avg Days Open", round(average_days_open, 1))
+col1.metric(
+    "Open Breaks",
+    total_exceptions,
+)
+
+col2.metric(
+    "High Risk",
+    high_risk_exceptions,
+)
+
+col3.metric(
+    "Critical Priority",
+    critical_exceptions,
+)
+
+col4.metric(
+    "Aged 3+ Days",
+    aged_exceptions,
+)
+
+col5.metric(
+    "Est. Break Exposure",
+    format_currency(total_dollar_impact),
+)
+
+col6.metric(
+    "Avg. Days Open",
+    round(average_days_open, 1),
+)
 
 st.divider()
 
@@ -190,49 +253,92 @@ st.dataframe(
 st.subheader("Priority Queue")
 
 priority_queue = exceptions.sort_values(
-    ["priority", "estimated_dollar_impact", "days_open"],
-    ascending=[True, False, False],
+    [
+        "priority_rank",
+        "days_open",
+        "estimated_dollar_impact",
+    ],
+    ascending=[
+        True,
+        False,
+        False,
+    ],
+)
+
+priority_display = priority_queue[
+    [
+        "record_id",
+        "source",
+        "portfolio",
+        "ticker",
+        "break_type",
+        "priority",
+        "risk_level",
+        "days_open",
+        "estimated_dollar_impact",
+        "exception_owner",
+        "root_cause_category",
+        "recommended_action",
+        "status",
+    ]
+].copy()
+
+priority_display = priority_display.rename(
+    columns={
+        "record_id": "Record ID",
+        "source": "Workflow",
+        "portfolio": "Portfolio",
+        "ticker": "Security",
+        "break_type": "Break Type",
+        "priority": "Priority",
+        "risk_level": "Risk",
+        "days_open": "Days Open",
+        "estimated_dollar_impact": "Est. Exposure",
+        "exception_owner": "Assigned Team",
+        "root_cause_category": "Root Cause",
+        "recommended_action": "Next Action",
+        "status": "Status",
+    }
 )
 
 st.dataframe(
-    priority_queue[
-        [
-            "source",
-            "record_id",
-            "portfolio",
-            "ticker",
-            "break_type",
-            "risk_level",
-            "priority",
-            "exception_owner",
-            "days_open",
-            "estimated_dollar_impact",
-            "root_cause_category",
-            "recommended_action",
-            "status",
-        ]
-    ],
+    priority_display,
     use_container_width=True,
+    hide_index=True,
+    column_config={
+        "Est. Exposure": st.column_config.NumberColumn(
+            format="$%.2f",
+        ),
+        "Days Open": st.column_config.NumberColumn(
+            format="%d",
+        ),
+    },
 )
 
 st.divider()
 
-st.subheader("Filter Exceptions")
+st.subheader("Break Review")
 
-filter_col1, filter_col2, filter_col3 = st.columns(3)
+filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4)
 
 with filter_col1:
     selected_sources = st.multiselect(
-        "Reconciliation Source",
+        "Workflow",
         options=sorted(exceptions["source"].unique()),
         default=sorted(exceptions["source"].unique()),
     )
 
 with filter_col2:
-    selected_risk_levels = st.multiselect(
-        "Risk Level",
-        options=sorted(exceptions["risk_level"].unique()),
-        default=sorted(exceptions["risk_level"].unique()),
+    priority_options = [
+        priority
+        for priority in ["Critical", "High", "Medium", "Low"]
+        if priority in exceptions["priority"].unique()
+    ]
+
+    selected_priorities = st.multiselect(
+        "Priority",
+        options=priority_options,
+        default=priority_options,
     )
 
 with filter_col3:
@@ -242,19 +348,100 @@ with filter_col3:
         default=sorted(exceptions["portfolio"].unique()),
     )
 
+with filter_col4:
+    minimum_days_open = st.number_input(
+        "Minimum Days Open",
+        min_value=0,
+        max_value=int(exceptions["days_open"].max()),
+        value=0,
+        step=1,
+    )
+
 filtered_exceptions = exceptions[
-    (exceptions["source"].isin(selected_sources))
-    & (exceptions["risk_level"].isin(selected_risk_levels))
-    & (exceptions["portfolio"].isin(selected_portfolios))
-]
+    exceptions["source"].isin(selected_sources)
+    & exceptions["priority"].isin(selected_priorities)
+    & exceptions["portfolio"].isin(selected_portfolios)
+    & (exceptions["days_open"] >= minimum_days_open)
+].copy()
 
-st.dataframe(filtered_exceptions, use_container_width=True)
+filtered_exceptions = filtered_exceptions.sort_values(
+    [
+        "priority_rank",
+        "days_open",
+        "estimated_dollar_impact",
+    ],
+    ascending=[
+        True,
+        False,
+        False,
+    ],
+)
 
+filtered_display = filtered_exceptions[
+    [
+        "record_id",
+        "source",
+        "portfolio",
+        "ticker",
+        "break_type",
+        "priority",
+        "risk_level",
+        "days_open",
+        "estimated_dollar_impact",
+        "exception_owner",
+        "status",
+    ]
+].copy()
+
+filtered_display = filtered_display.rename(
+    columns={
+        "record_id": "Record ID",
+        "source": "Workflow",
+        "portfolio": "Portfolio",
+        "ticker": "Security",
+        "break_type": "Break Type",
+        "priority": "Priority",
+        "risk_level": "Risk",
+        "days_open": "Days Open",
+        "estimated_dollar_impact": "Est. Exposure",
+        "exception_owner": "Assigned Team",
+        "status": "Status",
+    }
+)
+
+st.caption(
+    f"{len(filtered_display)} breaks match the selected criteria."
+)
+
+st.dataframe(
+    filtered_display,
+    use_container_width=True,
+    hide_index=True,
+    column_config={
+        "Est. Exposure": st.column_config.NumberColumn(
+            format="$%.2f",
+        ),
+        "Days Open": st.column_config.NumberColumn(
+            format="%d",
+        ),
+    },
+)
 st.divider()
 
 st.subheader("Download Reports")
 
-csv_data = filtered_exceptions.to_csv(index=False)
+download_columns = [
+    column
+    for column in filtered_exceptions.columns
+    if column not in [
+        "priority_rank",
+        "risk_rank",
+    ]
+]
+
+csv_data = filtered_exceptions[
+    download_columns
+].to_csv(index=False)
 
 st.download_button(
     label="Download Filtered Exceptions CSV",
