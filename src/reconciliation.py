@@ -4,13 +4,24 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = BASE_DIR / "data"
+GENERATED_DATA_DIR = DATA_DIR / "generated"
 OUTPUT_DIR = BASE_DIR / "output"
 
-
+USE_GENERATED_TRADES = True
 def load_trade_data():
-    """Load internal and custodian trade files."""
-    internal_trades = pd.read_csv(DATA_DIR / "trades_internal.csv")
-    custodian_trades = pd.read_csv(DATA_DIR / "trades_custodian.csv")
+    """
+    Load either the original demonstration trade files or the expanded
+    generated trade files based on the dataset setting.
+    """
+    if USE_GENERATED_TRADES:
+        internal_file = GENERATED_DATA_DIR / "trades_internal_generated.csv"
+        custodian_file = GENERATED_DATA_DIR / "trades_custodian_generated.csv"
+    else:
+        internal_file = DATA_DIR / "trades_internal.csv"
+        custodian_file = DATA_DIR / "trades_custodian.csv"
+
+    internal_trades = pd.read_csv(internal_file)
+    custodian_trades = pd.read_csv(custodian_file)
 
     return internal_trades, custodian_trades
 
@@ -599,8 +610,13 @@ def main():
         position_exceptions,
         cash_exceptions,
     )
-
+    dataset_name = (
+        "Expanded generated dataset"
+        if USE_GENERATED_TRADES
+        else "Original demonstration dataset"
+    )
     print("Reconciliation complete.")
+    print(f"Trade dataset: {dataset_name}")
     print(f"Trade exceptions found: {len(trade_exceptions)}")
     print(f"Position exceptions found: {len(position_exceptions)}")
     print(f"Cash exceptions found: {len(cash_exceptions)}")
