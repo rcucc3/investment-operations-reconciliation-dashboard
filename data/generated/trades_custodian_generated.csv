@@ -1,0 +1,49 @@
+trade_id,trade_date,settlement_date,portfolio,ticker,asset_class,side,quantity,price,currency,broker,trader,custodian_account
+T0001,2026-06-12,2026-06-13,US Growth Fund,AAPL,Equity,BUY,150,194.25,USD,Morgan Stanley,J. Miller,GF-1001
+T0002,2026-06-01,2026-06-02,Short Duration Bond Fund,XLF,ETF,BUY,25,43.39,USD,Bank of America,J. Miller,SDB-5001
+T0003,2026-06-12,2026-06-13,Short Duration Bond Fund,GOOGL,Equity,SELL,500,177.91,USD,Bank of America,S. Lee,SDB-5001
+T0004,2026-06-13,2026-06-14,US Growth Fund,TM,ADR,SELL,75,179.11,USD,Goldman Sachs,A. Patel,GF-1001
+T0005,2026-06-06,2026-06-07,Balanced Allocation Fund,TM,ADR,BUY,50,176.95,USD,Goldman Sachs,S. Lee,BF-2001
+T0006,2026-06-13,2026-06-14,Short Duration Bond Fund,JPM,Equity,BUY,25,206.09,USD,Citigroup,J. Miller,SDB-5001
+T0007,2026-06-14,2026-06-15,Short Duration Bond Fund,JPM,Equity,BUY,175,205.47,USD,Morgan Stanley,A. Patel,SDB-5001
+T0008,2026-06-14,2026-06-15,Core Income Fund,MSFT,Equity,SELL,100,423.18,USD,Goldman Sachs,M. Chen,IF-3001
+T0009,2026-06-06,2026-06-07,Core Income Fund,NVDA,Equity,SELL,200,122.04,USD,Morgan Stanley,A. Patel,IF-3001
+T0010,2026-06-04,2026-06-05,Short Duration Bond Fund,ASML,Equity,SELL,75,934.49,EUR,Bank of America,A. Patel,SDB-5001
+T0011,2026-06-13,2026-06-14,Core Income Fund,EWJ,ETF,BUY,25,68.78,USD,Goldman Sachs,M. Chen,IF-3001
+T0012,2026-06-04,2026-06-05,Core Income Fund,MSFT,Equity,SELL,200,418.04,USD,Citigroup,M. Chen,IF-3001
+T0013,2026-06-03,2026-06-04,Balanced Allocation Fund,JPM,Equity,SELL,100,206.16,USD,Bank of America,M. Chen,BF-2001
+T0014,2026-06-06,2026-06-07,Short Duration Bond Fund,XLF,ETF,BUY,100,44.19,USD,Bank of America,M. Chen,SDB-5001
+T0015,2026-06-01,2026-06-02,US Growth Fund,TM,ADR,BUY,50,177.16,USD,Citigroup,J. Miller,GF-1001
+T0016,2026-06-10,2026-06-11,International Equity Fund,XLF,ETF,BUY,300,43.78,USD,Morgan Stanley,S. Lee,IEF-4001
+T0017,2026-06-05,2026-06-06,Core Income Fund,MSFT,Equity,BUY,250,417.23,USD,Goldman Sachs,A. Patel,IF-3001
+T0018,2026-06-14,2026-06-16,Short Duration Bond Fund,MSFT,Equity,BUY,150,422.97,USD,J.P. Morgan,S. Lee,SDB-5001
+T0019,2026-06-13,2026-06-15,Balanced Allocation Fund,IEF,Bond ETF,SELL,500,95.59,USD,Citigroup,J. Miller,BF-2001
+T0020,2026-06-15,2026-06-16,US Growth Fund,SPY,ETF,BUY,150,527.64,USD,Bank of America,J. Miller,GF-1001
+T0021,2026-06-08,2026-06-09,US Growth Fund,ASML,Equity,BUY,50,944.14,EUR,J.P. Morgan,M. Chen,GF-1001
+T0022,2026-06-05,2026-06-06,Short Duration Bond Fund,NVDA,Equity,SELL,500,123.66,USD,J.P. Morgan,A. Patel,SDB-5001
+T0023,2026-06-11,2026-06-12,Core Income Fund,XLF,ETF,SELL,200,43.7,USD,Morgan Stanley,A. Patel,IF-3001
+T0024,2026-06-06,2026-06-07,Balanced Allocation Fund,MSFT,Equity,BUY,25,420.84,EUR,Bank of America,A. Patel,BF-2001
+T0025,2026-06-12,2026-06-13,US Growth Fund,MSFT,Equity,BUY,25,417.82,USD,Goldman Sachs,J. Miller,GF-1001
+T0026,2026-06-05,2026-06-06,Short Duration Bond Fund,GOOGL,Equity,BUY,300,177.18,USD,Bank of America,M. Chen,SDB-5001
+T0027,2026-06-08,2026-06-09,Balanced Allocation Fund,TM,ADR,BUY,250,177.3,USD,Citigroup,S. Lee,BF-2001
+T0028,2026-06-08,2026-06-09,International Equity Fund,XLF,ETF,BUY,25,43.9,USD,Morgan Stanley,M. Chen,IEF-4001
+T0029,2026-06-14,2026-06-15,Core Income Fund,TM,ADR,BUY,50,177.5,USD,Bank of America,M. Chen,IF-3001
+T0030,2026-06-03,2026-06-04,Balanced Allocation Fund,XLF,ETF,SELL,150,43.72,USD,Citigroup,J. Miller,BF-2001
+T0031,2026-06-09,2026-06-10,US Growth Fund,SAP,Equity,BUY,25,186.23,EUR,J.P. Morgan,M. Chen,GF-1001
+T0032,2026-06-04,2026-06-06,International Equity Fund,TLT,Bond ETF,BUY,250,92.03,USD,Citigroup,J. Miller,IEF-4001
+T0033,2026-06-15,2026-06-16,International Equity Fund,JPM,Equity,SELL,300,204.27,USD,J.P. Morgan,A. Patel,IEF-4001
+T0034,2026-06-01,2026-06-02,Core Income Fund,GOOGL,Equity,SELL,500,176.64,USD,Morgan Stanley,J. Miller,IF-3001
+T0036,2026-06-11,2026-06-12,Short Duration Bond Fund,MSFT,Equity,BUY,100,419.29,USD,Bank of America,J. Miller,SDB-5001
+T0037,2026-06-07,2026-06-08,Short Duration Bond Fund,MSFT,Equity,SELL,500,418.56,USD,J.P. Morgan,S. Lee,SDB-5001
+T0038,2026-06-07,2026-06-08,Balanced Allocation Fund,JPM,Equity,SELL,75,205.85,USD,Citigroup,S. Lee,BF-2001
+T0039,2026-06-08,2026-06-09,US Growth Fund,AAPL,Equity,BUY,50,193.58,USD,Bank of America,S. Lee,GF-1001
+T0040,2026-06-15,2026-06-16,Balanced Allocation Fund,SPY,ETF,SELL,50,534.42,USD,Goldman Sachs,A. Patel,BF-2001
+T0042,2026-06-05,2026-06-06,US Growth Fund,NVDA,Equity,BUY,50,123.71,USD,Goldman Sachs,S. Lee,GF-1001
+T0043,2026-06-12,2026-06-13,Short Duration Bond Fund,GOOGL,Equity,SELL,200,177.14,USD,Bank of America,M. Chen,SDB-5001
+T0044,2026-06-01,2026-06-02,Core Income Fund,EWJ,ETF,SELL,50,69.34,USD,Morgan Stanley,J. Miller,IF-3001
+T0045,2026-06-03,2026-06-04,Core Income Fund,TM,ADR,SELL,150,177.19,USD,Bank of America,M. Chen,IF-3001
+T0046,2026-06-02,2026-06-03,Short Duration Bond Fund,AAPL,Equity,BUY,50,196.99,USD,Bank of America,J. Miller,SDB-5001
+T0047,2026-06-09,2026-06-11,Core Income Fund,AGG,Bond ETF,BUY,75,97.46,USD,Goldman Sachs,S. Lee,IF-3001
+T0049,2026-06-03,2026-06-04,Short Duration Bond Fund,ASML,Equity,BUY,100,942.02,EUR,Citigroup,J. Miller,SDB-5001
+T0050,2026-06-15,2026-06-16,Balanced Allocation Fund,ASML,Equity,SELL,200,940.48,EUR,J.P. Morgan,S. Lee,BF-2001
+T0051,2026-06-12,2026-06-13,US Growth Fund,AMZN,Equity,BUY,75,185.5,USD,Goldman Sachs,J. Miller,GF-1001

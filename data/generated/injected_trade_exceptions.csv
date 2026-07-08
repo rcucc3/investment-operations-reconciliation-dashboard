@@ -1,0 +1,10 @@
+trade_id,exception_type,internal_value,custodian_value
+T0007,quantity_mismatch,200,175
+T0012,price_mismatch,417.69,418.04
+T0018,settlement_date_mismatch,2026-06-15,2026-06-16
+T0024,currency_mismatch,USD,EUR
+T0030,side_mismatch,BUY,SELL
+T0035,missing_from_custodian,Present,Missing
+T0041,missing_from_custodian,Present,Missing
+T0048,missing_from_custodian,Present,Missing
+T0051,missing_from_internal,Missing,Present
