@@ -1,6 +1,8 @@
 import pandas as pd
 from pathlib import Path
-
+from openpyxl.formatting.rule import CellIsRule
+from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.utils import get_column_letter
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = BASE_DIR / "data"
@@ -526,6 +528,131 @@ def reconcile_cash(internal_cash, custodian_cash):
                 )
 
     return pd.DataFrame(exceptions)
+def format_excel_workbook(writer):
+    """
+    Apply professional formatting to each worksheet in the Excel report.
+    """
+    workbook = writer.book
+
+    header_fill = PatternFill(
+        fill_type="solid",
+        fgColor="1F4E78",
+    )
+
+    header_font = Font(
+        color="FFFFFF",
+        bold=True,
+    )
+
+    high_risk_fill = PatternFill(
+        fill_type="solid",
+        fgColor="F4CCCC",
+    )
+
+    medium_risk_fill = PatternFill(
+        fill_type="solid",
+        fgColor="FFF2CC",
+    )
+
+    critical_fill = PatternFill(
+        fill_type="solid",
+        fgColor="E6B8AF",
+    )
+
+    currency_headers = {
+        "estimated_dollar_impact",
+        "Value",
+    }
+
+    for worksheet in workbook.worksheets:
+        worksheet.freeze_panes = "A2"
+        worksheet.auto_filter.ref = worksheet.dimensions
+
+        for cell in worksheet[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(
+                horizontal="center",
+                vertical="center",
+            )
+
+        worksheet.row_dimensions[1].height = 22
+
+        for column_cells in worksheet.columns:
+            column_letter = get_column_letter(
+                column_cells[0].column
+            )
+
+            max_length = 0
+
+            for cell in column_cells:
+                cell_value = "" if cell.value is None else str(cell.value)
+                max_length = max(max_length, len(cell_value))
+
+            adjusted_width = min(max_length + 2, 45)
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+
+        header_lookup = {
+            cell.value: cell.column
+            for cell in worksheet[1]
+        }
+
+        for header_name in currency_headers:
+            if header_name in header_lookup:
+                column_number = header_lookup[header_name]
+
+                for row_number in range(
+                    2,
+                    worksheet.max_row + 1,
+                ):
+                    worksheet.cell(
+                        row=row_number,
+                        column=column_number,
+                    ).number_format = '$#,##0.00'
+
+        if "risk_level" in header_lookup:
+            risk_column = get_column_letter(
+                header_lookup["risk_level"]
+            )
+
+            worksheet.conditional_formatting.add(
+                f"{risk_column}2:{risk_column}{worksheet.max_row}",
+                CellIsRule(
+                    operator="equal",
+                    formula=['"High"'],
+                    fill=high_risk_fill,
+                ),
+            )
+
+            worksheet.conditional_formatting.add(
+                f"{risk_column}2:{risk_column}{worksheet.max_row}",
+                CellIsRule(
+                    operator="equal",
+                    formula=['"Medium"'],
+                    fill=medium_risk_fill,
+                ),
+            )
+
+        if "priority" in header_lookup:
+            priority_column = get_column_letter(
+                header_lookup["priority"]
+            )
+
+            worksheet.conditional_formatting.add(
+                f"{priority_column}2:{priority_column}{worksheet.max_row}",
+                CellIsRule(
+                    operator="equal",
+                    formula=['"Critical"'],
+                    fill=critical_fill,
+                ),
+            )
+
+        for row in worksheet.iter_rows(min_row=2):
+            for cell in row:
+                cell.alignment = Alignment(
+                    vertical="top",
+                    wrap_text=True,
+                )
 def export_excel_report(all_exceptions, trade_exceptions, position_exceptions, cash_exceptions):
     """
     Export a multi-tab Excel exception report for operations review.
@@ -604,6 +731,7 @@ def export_excel_report(all_exceptions, trade_exceptions, position_exceptions, c
         portfolio_breakdown.to_excel(writer, sheet_name="Portfolio Breakdown", index=False)
         source_breakdown.to_excel(writer, sheet_name="Source Breakdown", index=False)
         root_cause_breakdown.to_excel(writer, sheet_name="Root Cause Breakdown", index=False)
+        format_excel_workbook(writer)
 
     return excel_output_file   
 
