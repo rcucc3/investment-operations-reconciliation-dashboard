@@ -7,13 +7,13 @@ DATA_DIR = BASE_DIR / "data"
 GENERATED_DATA_DIR = DATA_DIR / "generated"
 OUTPUT_DIR = BASE_DIR / "output"
 
-USE_GENERATED_TRADES = True
+USE_GENERATED_DATA = True
 def load_trade_data():
     """
     Load either the original demonstration trade files or the expanded
     generated trade files based on the dataset setting.
     """
-    if USE_GENERATED_TRADES:
+    if USE_GENERATED_DATA:
         internal_file = GENERATED_DATA_DIR / "trades_internal_generated.csv"
         custodian_file = GENERATED_DATA_DIR / "trades_custodian_generated.csv"
     else:
@@ -27,9 +27,23 @@ def load_trade_data():
 
 
 def load_holdings_data():
-    """Load internal and custodian holdings files."""
-    internal_holdings = pd.read_csv(DATA_DIR / "holdings_internal.csv")
-    custodian_holdings = pd.read_csv(DATA_DIR / "holdings_custodian.csv")
+    """
+    Load either the original demonstration holdings files or the
+    expanded generated holdings files.
+    """
+    if USE_GENERATED_DATA:
+        internal_file = (
+            GENERATED_DATA_DIR / "holdings_internal_generated.csv"
+        )
+        custodian_file = (
+            GENERATED_DATA_DIR / "holdings_custodian_generated.csv"
+        )
+    else:
+        internal_file = DATA_DIR / "holdings_internal.csv"
+        custodian_file = DATA_DIR / "holdings_custodian.csv"
+
+    internal_holdings = pd.read_csv(internal_file)
+    custodian_holdings = pd.read_csv(custodian_file)
 
     return internal_holdings, custodian_holdings
 
@@ -612,7 +626,7 @@ def main():
     )
     dataset_name = (
         "Expanded generated dataset"
-        if USE_GENERATED_TRADES
+        if USE_GENERATED_DATA
         else "Original demonstration dataset"
     )
     print("Reconciliation complete.")
